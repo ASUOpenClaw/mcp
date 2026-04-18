@@ -27,6 +27,8 @@ mcp = FastMCP(
         "and conversations. Every tool requires ctx_token — pass the token from the "
         "[WORKSPACE_CTX: mcp_ctx=...] system prompt unchanged."
     ),
+    host=settings.host,
+    port=settings.port,
 )
 
 # Register all tool groups
@@ -44,7 +46,7 @@ def main() -> None:
     rest_client.init(pool_size=settings.http_pool_size)
     logger.info("Starting MCP server on %s:%d", settings.host, settings.port)
     try:
-        mcp.run(transport="streamable-http", host=settings.host, port=settings.port)
+        mcp.run(transport="streamable-http")
     finally:
         import asyncio
         asyncio.run(rest_client.close())
