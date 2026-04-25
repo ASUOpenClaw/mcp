@@ -1,31 +1,29 @@
 """
-Resolve an MCP context token to (workspace_id, user_id).
+Resolve a ctx_token to MCPContext (workspace_id + owner_user_id).
 
-Two token formats are accepted:
+Authentication: ctx_token is an HMAC-SHA256 service token derived from the workspace_id.
+Format: ws_{workspace_id}_{hmac_sha256_hex}
+Shared secret: settings.service_api_key (MCP_SERVICE_API_KEY env var).
 
-1. Session token (short-lived, minted by Shell proxy):
-   - Redis key mcp_ctx:{token} → {"workspace_id": "...", "user_id": "..."}
-   - TTL: 300 s, refreshed on every user message.
-
-2. Service token (no Redis entry, for cron jobs and automated agent turns):
-   - Format: ws_{workspace_id}_{hmac_sha256_hex}
-   - Validated by recomputing HMAC-SHA256(MCP_SERVICE_API_KEY, workspace_id).
-   - Never expires; token is deterministic — same workspace_id always yields same token.
+The shell proxy injects this token into the agent's system prompt so the model
+passes it as ctx_token to every ws__ tool call. MCP verifies the HMAC locally
+without Redis round-trip, then looks up owner_user_id from ws_creds.
 """
 
 from __future__ import annotations
 
 import hashlib
-import hmac
+import hmac as _hmac
 import json
 import logging
 from dataclasses import dataclass
 
 import redis.asyncio as aioredis
-from mcp import McpError
-from mcp.types import ErrorData, INVALID_PARAMS
 
-from src.config import settings
+from mcp import McpError
+from mcp.types import INVALID_PARAMS, ErrorData
+
+from .config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -48,52 +46,65 @@ class MCPContext:
     user_id: str
 
 
-def _verify_service_token(token: str) -> MCPContext | None:
-    """
-    Validate a service token (format: ws_{ws_id}_{hmac}).
-    Returns MCPContext on success, None if format is wrong or HMAC invalid.
-    """
-    if not token.startswith("ws_"):
-        return None
-    # Split on "_" with maxsplit=2: ["ws", ws_id (with hyphens), hmac_hex]
-    parts = token.split("_", 2)
-    if len(parts) != 3:
-        return None
-    _, ws_id, provided_sig = parts
-    expected_sig = hmac.new(
-        settings.service_api_key.encode(),
-        ws_id.encode(),
-        hashlib.sha256,
-    ).hexdigest()
-    if not hmac.compare_digest(expected_sig, provided_sig):
-        return None
-    return MCPContext(workspace_id=ws_id, user_id="system")
-
-
 async def resolve_context(ctx_token: str) -> MCPContext:
     """
-    Resolve ctx_token to MCPContext.
-    Tries Redis session lookup first; falls back to HMAC service token validation.
-    Raises McpError if neither succeeds.
+    Validate an HMAC service token and resolve to MCPContext.
+
+    Token format: ws_{workspace_id}_{sha256_hex}
+    Verifies HMAC before any Redis lookup — tampered tokens are rejected immediately.
+    Raises McpError(INVALID_PARAMS) for bad tokens or unknown workspaces.
     """
-    # 1. Session token — Redis lookup.
+    try:
+        parts = ctx_token.split("_", 2)
+        if len(parts) != 3 or parts[0] != "ws":
+            raise ValueError("wrong prefix or part count")
+        _, workspace_id, sig = parts
+    except ValueError:
+        raise McpError(
+            ErrorData(
+                code=INVALID_PARAMS,
+                message="Invalid ctx_token format. Expected ws_{workspace_id}_{hmac_sha256}.",
+            )
+        )
+
+    expected = _hmac.new(
+        settings.service_api_key.encode(),
+        workspace_id.encode(),
+        hashlib.sha256,
+    ).hexdigest()
+
+    if not _hmac.compare_digest(expected, sig):
+        raise McpError(
+            ErrorData(
+                code=INVALID_PARAMS,
+                message="Invalid ctx_token signature.",
+            )
+        )
+
     redis = get_redis()
-    data = await redis.get(f"mcp_ctx:{ctx_token}")
-    if data:
-        parsed = json.loads(data)
-        return MCPContext(
-            workspace_id=parsed["workspace_id"],
-            user_id=parsed["user_id"],
+    creds_raw = await redis.get(f"ws_creds:{workspace_id}")
+    if not creds_raw:
+        raise McpError(
+            ErrorData(
+                code=INVALID_PARAMS,
+                message=f"Unknown workspace '{workspace_id}'. Ensure the workspace is provisioned and ws_creds are set.",
+            )
         )
-
-    # 2. Service token — HMAC validation, no Redis needed.
-    ctx = _verify_service_token(ctx_token)
-    if ctx is not None:
-        return ctx
-
-    raise McpError(
-        ErrorData(
-            code=INVALID_PARAMS,
-            message="Invalid or expired workspace context. Do not retry with a modified token.",
+    try:
+        creds = json.loads(creds_raw)
+        owner_user_id = creds.get("owner_user_id")
+        if not owner_user_id:
+            raise McpError(
+                ErrorData(
+                    code=INVALID_PARAMS,
+                    message=f"Workspace '{workspace_id}' is missing owner_user_id in ws_creds. Re-provision the workspace.",
+                )
+            )
+    except (json.JSONDecodeError, KeyError) as exc:
+        raise McpError(
+            ErrorData(
+                code=INVALID_PARAMS,
+                message=f"Invalid ws_creds for workspace '{workspace_id}': {exc}",
+            )
         )
-    )
+    return MCPContext(workspace_id=workspace_id, user_id=owner_user_id)

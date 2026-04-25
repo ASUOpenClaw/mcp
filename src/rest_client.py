@@ -50,7 +50,9 @@ async def close() -> None:
 @asynccontextmanager
 async def _acquire() -> AsyncGenerator[httpx.AsyncClient, None]:
     if _pool is None:
-        raise RuntimeError("rest_client not initialised — call rest_client.init() at startup")
+        raise RuntimeError(
+            "rest_client not initialised — call rest_client.init() at startup"
+        )
     client = await _pool.get()
     try:
         yield client

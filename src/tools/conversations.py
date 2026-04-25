@@ -4,8 +4,8 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-from ..context import resolve_context
 from .. import rest_client
+from ..context import resolve_context
 
 
 def register(mcp: FastMCP) -> None:
@@ -19,13 +19,15 @@ def register(mcp: FastMCP) -> None:
         """List the user's conversations in this workspace.
 
         Args:
-            ctx_token: Workspace context token from the system prompt.
+            ctx_token: Workspace context token from the system prompt [WORKSPACE_CTX].
             page: Page number (default 1).
             per_page: Results per page (default 20).
         """
         ctx = await resolve_context(ctx_token)
         params = {"page": page, "per_page": per_page}
-        return await rest_client.get(ctx, f"/workspaces/{ctx.workspace_id}/conversations", params=params)
+        return await rest_client.get(
+            ctx, f"/workspaces/{ctx.workspace_id}/conversations", params=params
+        )
 
     @mcp.tool()
     async def get_conversation_messages(
@@ -37,7 +39,7 @@ def register(mcp: FastMCP) -> None:
         """Get paginated messages from a conversation.
 
         Args:
-            ctx_token: Workspace context token from the system prompt.
+            ctx_token: Workspace context token from the system prompt [WORKSPACE_CTX].
             conversation_id: UUID of the conversation.
             page: Page number (default 1).
             per_page: Messages per page (default 50).

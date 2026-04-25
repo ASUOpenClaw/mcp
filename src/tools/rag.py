@@ -4,8 +4,8 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-from ..context import resolve_context
 from .. import rest_client
+from ..context import resolve_context
 
 
 def register(mcp: FastMCP) -> None:
@@ -22,7 +22,7 @@ def register(mcp: FastMCP) -> None:
         """Search the workspace knowledge base for relevant document chunks.
 
         Args:
-            ctx_token: Workspace context token from the system prompt.
+            ctx_token: Workspace context token from the system prompt [WORKSPACE_CTX].
             query: Natural language search query.
             top_k: Maximum number of results to return (default 5).
             min_score: Minimum relevance score threshold (default 0.4).
@@ -39,4 +39,6 @@ def register(mcp: FastMCP) -> None:
                 "mime_types": mime_types,
             },
         }
-        return await rest_client.post(ctx, f"/workspaces/{ctx.workspace_id}/rag/search", body)
+        return await rest_client.post(
+            ctx, f"/workspaces/{ctx.workspace_id}/rag/search", body
+        )

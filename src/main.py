@@ -9,10 +9,10 @@ import logging
 
 from mcp.server.fastmcp import FastMCP
 
+from . import rest_client
 from .config import settings
 from .context import init_redis
-from . import rest_client
-from .tools import rag, files, folders, conversations, transcriptions
+from .tools import conversations, files, folders, rag, transcriptions
 
 logging.basicConfig(
     level=logging.INFO,
@@ -49,6 +49,7 @@ def main() -> None:
         mcp.run(transport="streamable-http")
     finally:
         import asyncio
+
         asyncio.run(rest_client.close())
 
 

@@ -5,8 +5,8 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-from ..context import resolve_context
 from .. import rest_client
+from ..context import resolve_context
 
 
 def register(mcp: FastMCP) -> None:
@@ -23,7 +23,7 @@ def register(mcp: FastMCP) -> None:
         """List files in the workspace or a specific folder.
 
         Args:
-            ctx_token: Workspace context token from the system prompt.
+            ctx_token: Workspace context token from the system prompt [WORKSPACE_CTX].
             folder_id: Filter to a specific folder UUID (optional).
             search: Search by file name (optional).
             mime_type: Filter by MIME type (optional).
@@ -38,7 +38,9 @@ def register(mcp: FastMCP) -> None:
             params["search"] = search
         if mime_type:
             params["mime_type"] = mime_type
-        return await rest_client.get(ctx, f"/workspaces/{ctx.workspace_id}/files", params=params)
+        return await rest_client.get(
+            ctx, f"/workspaces/{ctx.workspace_id}/files", params=params
+        )
 
     @mcp.tool()
     async def get_file(
@@ -48,11 +50,13 @@ def register(mcp: FastMCP) -> None:
         """Get metadata for a specific file.
 
         Args:
-            ctx_token: Workspace context token from the system prompt.
+            ctx_token: Workspace context token from the system prompt [WORKSPACE_CTX].
             file_id: UUID of the file to retrieve.
         """
         ctx = await resolve_context(ctx_token)
-        return await rest_client.get(ctx, f"/workspaces/{ctx.workspace_id}/files/{file_id}")
+        return await rest_client.get(
+            ctx, f"/workspaces/{ctx.workspace_id}/files/{file_id}"
+        )
 
     @mcp.tool()
     async def get_download_url(
@@ -62,11 +66,13 @@ def register(mcp: FastMCP) -> None:
         """Get a presigned S3 download URL for a file (valid 1 hour).
 
         Args:
-            ctx_token: Workspace context token from the system prompt.
+            ctx_token: Workspace context token from the system prompt [WORKSPACE_CTX].
             file_id: UUID of the file to download.
         """
         ctx = await resolve_context(ctx_token)
-        return await rest_client.get(ctx, f"/workspaces/{ctx.workspace_id}/files/{file_id}/download")
+        return await rest_client.get(
+            ctx, f"/workspaces/{ctx.workspace_id}/files/{file_id}/download"
+        )
 
     @mcp.tool()
     async def get_file_status(
@@ -78,11 +84,13 @@ def register(mcp: FastMCP) -> None:
         before using rag_search to query its contents.
 
         Args:
-            ctx_token: Workspace context token from the system prompt.
+            ctx_token: Workspace context token from the system prompt [WORKSPACE_CTX].
             file_id: UUID of the file to check.
         """
         ctx = await resolve_context(ctx_token)
-        return await rest_client.get(ctx, f"/workspaces/{ctx.workspace_id}/files/{file_id}")
+        return await rest_client.get(
+            ctx, f"/workspaces/{ctx.workspace_id}/files/{file_id}"
+        )
 
     @mcp.tool()
     async def create_file(
@@ -96,7 +104,7 @@ def register(mcp: FastMCP) -> None:
         The file is automatically indexed for RAG search after upload.
 
         Args:
-            ctx_token: Workspace context token from the system prompt.
+            ctx_token: Workspace context token from the system prompt [WORKSPACE_CTX].
             filename: File name including extension (e.g. "report.md", "notes.txt").
             content: Full text content to write into the file.
             folder_id: UUID of the folder to place the file in (optional).

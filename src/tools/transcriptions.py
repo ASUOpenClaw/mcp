@@ -4,8 +4,8 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-from ..context import resolve_context
 from .. import rest_client
+from ..context import resolve_context
 
 
 def register(mcp: FastMCP) -> None:
@@ -22,7 +22,7 @@ def register(mcp: FastMCP) -> None:
         Use get_transcription(task_id) to poll until status is 'completed' or 'failed'.
 
         Args:
-            ctx_token: Workspace context token from the system prompt.
+            ctx_token: Workspace context token from the system prompt [WORKSPACE_CTX].
             file_id: UUID of the audio/video file to transcribe.
             language: ISO 639-1 language code (e.g. 'en', 'ru'). Auto-detected if omitted.
             include_timestamps: Whether to include word/segment timestamps in the result.
@@ -49,7 +49,7 @@ def register(mcp: FastMCP) -> None:
         get_transcription_record to retrieve the full result with both files.
 
         Args:
-            ctx_token: Workspace context token from the system prompt.
+            ctx_token: Workspace context token from the system prompt [WORKSPACE_CTX].
             task_id: UUID returned by transcribe_file.
         """
         ctx = await resolve_context(ctx_token)
@@ -69,7 +69,7 @@ def register(mcp: FastMCP) -> None:
         (indexed text file, searchable via rag_search).
 
         Args:
-            ctx_token: Workspace context token from the system prompt.
+            ctx_token: Workspace context token from the system prompt [WORKSPACE_CTX].
             page: Page number (default 1).
             per_page: Results per page (default 20, max 100).
         """
@@ -89,7 +89,7 @@ def register(mcp: FastMCP) -> None:
         Use audio_file.id with get_download_url to get a playable link to the recording.
 
         Args:
-            ctx_token: Workspace context token from the system prompt.
+            ctx_token: Workspace context token from the system prompt [WORKSPACE_CTX].
             transcription_id: UUID of the transcription record.
         """
         ctx = await resolve_context(ctx_token)
