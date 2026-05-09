@@ -86,7 +86,7 @@ def register(mcp: FastMCP) -> None:
         transcription_id: str,
     ) -> dict[str, Any]:
         """Get a single transcription with full audio and transcript file details.
-        Use audio_file.id with get_download_url to get a playable link to the recording.
+        Returns audio_file.id and transcript_file.id for use with other file tools.
 
         Args:
             ctx_token: Workspace context token from the system prompt [WORKSPACE_CTX].

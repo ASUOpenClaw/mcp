@@ -59,22 +59,6 @@ def register(mcp: FastMCP) -> None:
         )
 
     @mcp.tool()
-    async def get_download_url(
-        ctx_token: str,
-        file_id: str,
-    ) -> dict[str, Any]:
-        """Get a presigned S3 download URL for a file (valid 1 hour).
-
-        Args:
-            ctx_token: Workspace context token from the system prompt [WORKSPACE_CTX].
-            file_id: UUID of the file to download.
-        """
-        ctx = await resolve_context(ctx_token)
-        return await rest_client.get(
-            ctx, f"/workspaces/{ctx.workspace_id}/files/{file_id}/download"
-        )
-
-    @mcp.tool()
     async def get_file_status(
         ctx_token: str,
         file_id: str,
