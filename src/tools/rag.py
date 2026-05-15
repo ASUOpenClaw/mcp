@@ -39,6 +39,12 @@ def register(mcp: FastMCP) -> None:
                 "mime_types": mime_types,
             },
         }
-        return await rest_client.post(
+        result = await rest_client.post(
             ctx, f"/workspaces/{ctx.workspace_id}/rag/search", body
         )
+        if isinstance(result, dict) and "results" in result:
+            result["results"] = [
+                {k: v for k, v in chunk.items() if k != "workspace_id"}
+                for chunk in result["results"]
+            ]
+        return result

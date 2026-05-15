@@ -8,6 +8,12 @@ from mcp.server.fastmcp import FastMCP
 from .. import rest_client
 from ..context import resolve_context
 
+_DROP_FILE_FIELDS = {"s3_key", "workspace_id", "uploaded_by", "file_metadata"}
+
+
+def _compact_file(f: dict) -> dict:
+    return {k: v for k, v in f.items() if k not in _DROP_FILE_FIELDS}
+
 
 def register(mcp: FastMCP) -> None:
 
@@ -38,9 +44,12 @@ def register(mcp: FastMCP) -> None:
             params["search"] = search
         if mime_type:
             params["mime_type"] = mime_type
-        return await rest_client.get(
+        result = await rest_client.get(
             ctx, f"/workspaces/{ctx.workspace_id}/files", params=params
         )
+        if isinstance(result, dict) and "items" in result:
+            result["items"] = [_compact_file(f) for f in result["items"]]
+        return result
 
     @mcp.tool()
     async def get_file(
@@ -54,9 +63,10 @@ def register(mcp: FastMCP) -> None:
             file_id: UUID of the file to retrieve.
         """
         ctx = await resolve_context(ctx_token)
-        return await rest_client.get(
+        result = await rest_client.get(
             ctx, f"/workspaces/{ctx.workspace_id}/files/{file_id}"
         )
+        return _compact_file(result) if isinstance(result, dict) else result
 
     @mcp.tool()
     async def get_file_status(
@@ -72,9 +82,10 @@ def register(mcp: FastMCP) -> None:
             file_id: UUID of the file to check.
         """
         ctx = await resolve_context(ctx_token)
-        return await rest_client.get(
+        result = await rest_client.get(
             ctx, f"/workspaces/{ctx.workspace_id}/files/{file_id}"
         )
+        return _compact_file(result) if isinstance(result, dict) else result
 
     @mcp.tool()
     async def create_file(
@@ -109,7 +120,7 @@ def register(mcp: FastMCP) -> None:
             form["folder_id"] = folder_id
         if description:
             form["description"] = description
-        return await rest_client.post_multipart(
+        result = await rest_client.post_multipart(
             ctx,
             f"/workspaces/{ctx.workspace_id}/files",
             filename=filename,
@@ -117,6 +128,7 @@ def register(mcp: FastMCP) -> None:
             mime_type=mime_type,
             form_fields=form,
         )
+        return _compact_file(result) if isinstance(result, dict) else result
 
     @mcp.tool()
     async def publish_workspace_file(
@@ -152,8 +164,9 @@ def register(mcp: FastMCP) -> None:
             body["folder_id"] = folder_id
         if description:
             body["description"] = description
-        return await rest_client.post(
+        result = await rest_client.post(
             ctx,
             f"/workspaces/{ctx.workspace_id}/files/publish-workspace-file",
             body=body,
         )
+        return _compact_file(result) if isinstance(result, dict) else result
