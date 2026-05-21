@@ -17,7 +17,7 @@ def _compact_file(f: dict) -> dict:
 
 def register(mcp: FastMCP) -> None:
 
-    @mcp.tool()
+    @mcp.tool(structured_output=False)
     async def list_files(
         ctx_token: str,
         folder_id: str | None = None,
@@ -51,7 +51,7 @@ def register(mcp: FastMCP) -> None:
             result["items"] = [_compact_file(f) for f in result["items"]]
         return result
 
-    @mcp.tool()
+    @mcp.tool(structured_output=False)
     async def get_file(
         ctx_token: str,
         file_id: str,
@@ -68,7 +68,7 @@ def register(mcp: FastMCP) -> None:
         )
         return _compact_file(result) if isinstance(result, dict) else result
 
-    @mcp.tool()
+    @mcp.tool(structured_output=False)
     async def get_file_status(
         ctx_token: str,
         file_id: str,
@@ -87,7 +87,7 @@ def register(mcp: FastMCP) -> None:
         )
         return _compact_file(result) if isinstance(result, dict) else result
 
-    @mcp.tool()
+    @mcp.tool(structured_output=False)
     async def create_file(
         ctx_token: str,
         filename: str,
@@ -130,7 +130,7 @@ def register(mcp: FastMCP) -> None:
         )
         return _compact_file(result) if isinstance(result, dict) else result
 
-    @mcp.tool()
+    @mcp.tool(structured_output=False)
     async def publish_workspace_file(
         ctx_token: str,
         goclaw_path: str,

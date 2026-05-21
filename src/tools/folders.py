@@ -10,7 +10,7 @@ from ..context import resolve_context
 
 def register(mcp: FastMCP) -> None:
 
-    @mcp.tool()
+    @mcp.tool(structured_output=False)
     async def list_folders(
         ctx_token: str,
         parent_id: str | None = None,

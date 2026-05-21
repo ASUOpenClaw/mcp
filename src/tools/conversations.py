@@ -10,7 +10,7 @@ from ..context import resolve_context
 
 def register(mcp: FastMCP) -> None:
 
-    @mcp.tool()
+    @mcp.tool(structured_output=False)
     async def list_conversations(
         ctx_token: str,
         page: int = 1,
@@ -29,7 +29,7 @@ def register(mcp: FastMCP) -> None:
             ctx, f"/workspaces/{ctx.workspace_id}/conversations", params=params
         )
 
-    @mcp.tool()
+    @mcp.tool(structured_output=False)
     async def get_conversation_messages(
         ctx_token: str,
         conversation_id: str,

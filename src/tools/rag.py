@@ -10,7 +10,7 @@ from ..context import resolve_context
 
 def register(mcp: FastMCP) -> None:
 
-    @mcp.tool()
+    @mcp.tool(structured_output=False)
     async def rag_search(
         ctx_token: str,
         query: str,

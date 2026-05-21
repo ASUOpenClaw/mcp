@@ -10,7 +10,7 @@ from ..context import resolve_context
 
 def register(mcp: FastMCP) -> None:
 
-    @mcp.tool()
+    @mcp.tool(structured_output=False)
     async def transcribe_file(
         ctx_token: str,
         file_id: str,
@@ -38,7 +38,7 @@ def register(mcp: FastMCP) -> None:
             },
         )
 
-    @mcp.tool()
+    @mcp.tool(structured_output=False)
     async def get_transcription(
         ctx_token: str,
         task_id: str,
@@ -58,7 +58,7 @@ def register(mcp: FastMCP) -> None:
             f"/workspaces/{ctx.workspace_id}/transcribe/{task_id}",
         )
 
-    @mcp.tool()
+    @mcp.tool(structured_output=False)
     async def list_transcriptions(
         ctx_token: str,
         page: int = 1,
@@ -80,7 +80,7 @@ def register(mcp: FastMCP) -> None:
             params={"page": page, "per_page": per_page},
         )
 
-    @mcp.tool()
+    @mcp.tool(structured_output=False)
     async def get_transcription_record(
         ctx_token: str,
         transcription_id: str,
